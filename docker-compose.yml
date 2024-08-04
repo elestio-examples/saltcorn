@@ -1,0 +1,42 @@
+version: "3.7"
+
+services:
+  saltcorn-app:
+    image: saltcorn/saltcorn:${SOFTWARE_VERSION_TAG}
+    restart: always
+    depends_on:
+      - saltcorn-db
+    command: "serve"
+    ports: #not needed if using traefik
+      - "172.17.0.1:31404:3000"
+    environment:
+      - SALTCORN_SESSION_SECRET=${SALTCORN_SECRET}
+      - PGHOST=saltcorn-db
+      - PGUSER=${PGUSER}
+      - PGDATABASE=${PGDATABASE}
+      - PGPASSWORD=${PGPASSWORD}
+
+  saltcorn-db:
+    image: elestio/postgres:15
+    restart: always
+    volumes:
+      - ./data:/var/lib/postgresql/data
+      - ./docker-entrypoint-initdb.sql:/docker-entrypoint-initdb.d/init.sql
+    environment:
+      - POSTGRES_USER=${PGUSER}
+      - POSTGRES_PASSWORD=${PGPASSWORD}
+      - POSTGRES_DB=${PGDATABASE}
+    ports:
+      - 172.17.0.1:58565:5432
+
+  pgadmin:
+    image: elestio/pgadmin:latest
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${ADMIN_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${ADMIN_PASSWORD}
+      PGADMIN_LISTEN_PORT: 8080
+    ports:
+      - "172.17.0.1:52775:8080"
+    volumes:
+      - ./servers.json:/pgadmin4/servers.json
